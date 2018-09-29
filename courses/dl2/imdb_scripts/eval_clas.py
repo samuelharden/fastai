@@ -46,7 +46,7 @@ def eval_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, backwards=False,
         itos = pickle.load(open(dir_path / 'tmp' / 'itos.pkl', 'rb'))
         vs = len(itos)
 
-    m = get_rnn_classifier(bptt, 20*70, c, vs, emb_sz=em_sz, n_hid=nh, n_layers=nl, pad_token=1,
+    m = get_rnn_classifer(bptt, 20*70, c, vs, emb_sz=em_sz, n_hid=nh, n_layers=nl, pad_token=1,
                 layers=[em_sz*3, 50, c], drops=[0., 0.])
     learn = RNN_Learner(md, TextModel(to_gpu(m)))
     learn.load_encoder(lm_file)
