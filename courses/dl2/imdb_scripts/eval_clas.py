@@ -4,7 +4,7 @@ from fastai.lm_rnn import *
 from sklearn.metrics import confusion_matrix
 
 def eval_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, backwards=False,
-              bpe=False):
+              bpe=False, shared_encoder='shared_encoder', load_shared=False):
     print(f'dir_path {dir_path}; cuda_id {cuda_id}; lm_id {lm_id}; '
          f'clas_id {clas_id}; bs {bs}; backwards {backwards}; bpe {bpe}')
     if not hasattr(torch._C, '_cuda_setDevice'):
@@ -51,6 +51,9 @@ def eval_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, backwards=False,
     learn = RNN_Learner(md, TextModel(to_gpu(m)))
     learn.load_encoder(lm_file)
     learn.load(final_clas_file)
+    if load_shared:
+      print("Loading the shared encoder", shared_encoder)
+      learn.load_encoder(shared_encoder)
     predictions = np.argmax(learn.predict(), axis=1)
     acc = (val_lbls_sampled == predictions).mean()
     print('Accuracy =', acc, 'Confusion Matrix =')

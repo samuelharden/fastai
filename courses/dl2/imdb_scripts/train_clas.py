@@ -8,11 +8,10 @@ def freeze_all_but(learner, n):
     for l in c: set_trainable(l, False)
     set_trainable(c[n], True)
 
-
 def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards=False, startat=0, unfreeze=True,
                lr=0.01, dropmult=1.0, bpe=False, use_clr=True,
                use_regular_schedule=False, use_discriminative=True, last=False, chain_thaw=False,
-               from_scratch=False, train_file_id=''):
+               from_scratch=False, train_file_id='', shared_encoder='shared_encoder', load_shared=False):
     print(f'dir_path {dir_path}; cuda_id {cuda_id}; lm_id {lm_id}; clas_id {clas_id}; bs {bs}; cl {cl}; backwards {backwards}; '
         f'dropmult {dropmult} unfreeze {unfreeze} startat {startat}; bpe {bpe}; use_clr {use_clr};'
         f'use_regular_schedule {use_regular_schedule}; use_discriminative {use_discriminative}; last {last};'
@@ -36,7 +35,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     lm_path = dir_path / 'models' / f'{lm_file}.h5'
     assert lm_path.exists(), f'Error: {lm_path} does not exist.'
 
-    bptt,em_sz,nh,nl = 70,400,1150,3
+    bptt,em_sz,nh,nl = 20,400,1150,3
     opt_fn = partial(optim.Adam, betas=(0.8, 0.99))
 
     if backwards:
@@ -94,6 +93,11 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     else:
         print('Training classifier from scratch. LM encoder is not loaded.')
         use_regular_schedule = True
+    if load_shared:
+        print("Loading the shared layer in Encoder")
+        learn.load_encoder(shared_encoder)
+    else:
+        print("Not Loading the shared layer in Encoder")
 
     if (startat<1) and not last and not chain_thaw and not from_scratch:
         learn.freeze_to(-1)
@@ -103,8 +107,15 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
         learn.fit(lrs, 1, wds=wd, cycle_len=None if use_regular_schedule else 1,
                   use_clr=None if use_regular_schedule or not use_clr else (8, 3))
         learn.save(intermediate_clas_file)
+        learn.save_encoder(shared_encoder)
     elif startat==1:
+        print("Loading intermediate_Clas_file")
         learn.load(intermediate_clas_file)
+        if load_shared:
+          print("Loading the shared layer in Encoder")
+          learn.load_encoder(shared_encoder)
+        else:
+          print("Not Loading the shared layer in Encoder")
 
     if chain_thaw:
         lrs = np.array([0.0001, 0.0001, 0.0001, 0.0001, 0.001])
@@ -145,6 +156,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     print('Plotting lrs...')
     learn.sched.plot_lr()
     learn.save(final_clas_file)
+    learn.save_encoder(shared_encoder)
 
 if __name__ == '__main__': fire.Fire(train_clas)
 
