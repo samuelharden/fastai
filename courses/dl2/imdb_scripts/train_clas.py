@@ -11,11 +11,14 @@ def freeze_all_but(learner, n):
 def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards=False, startat=0, unfreeze=True,
                lr=0.01, dropmult=1.0, bpe=False, use_clr=True,
                use_regular_schedule=False, use_discriminative=True, last=False, chain_thaw=False,
-               from_scratch=False, train_file_id='', shared_encoder='shared_encoder', load_shared=False):
-    print(f'dir_path {dir_path}; cuda_id {cuda_id}; lm_id {lm_id}; clas_id {clas_id}; bs {bs}; cl {cl}; backwards {backwards}; '
-        f'dropmult {dropmult} unfreeze {unfreeze} startat {startat}; bpe {bpe}; use_clr {use_clr};'
-        f'use_regular_schedule {use_regular_schedule}; use_discriminative {use_discriminative}; last {last};'
-        f'chain_thaw {chain_thaw}; from_scratch {from_scratch}; train_file_id {train_file_id}')
+               from_scratch=False, train_file_id='', shared_encoder='shared_encoder',
+               out_shared_encoder='shared_encoder_updated',load_shared=False, use_swa=False):
+    print(f'dir_path {dir_path}; cuda_id {cuda_id}; lm_id {lm_id}; clas_id {clas_id}; bs {bs}; cl {cl}; backwards {backwards}; ')
+    print(f'dropmult {dropmult} unfreeze {unfreeze} startat {startat}; bpe {bpe}; use_clr {use_clr};')
+    print(f'use_regular_schedule {use_regular_schedule}; use_discriminative {use_discriminative}; last {last};')
+    print(f'use_swa {use_swa}; out_shared_encoder {out_shared_encoder}; shared_encoder {shared_encoder};')
+    print(f'load_shared {load_shared};')
+    print(f'chain_thaw {chain_thaw}; from_scratch {from_scratch}; train_file_id {train_file_id}')
     if not hasattr(torch._C, '_cuda_setDevice'):
         print('CUDA not available. Setting device=-1.')
         cuda_id = -1
@@ -102,12 +105,12 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     if (startat<1) and not last and not chain_thaw and not from_scratch:
         learn.freeze_to(-1)
         learn.fit(lrs, 1, wds=wd, cycle_len=None if use_regular_schedule else 1,
-                  use_clr=None if use_regular_schedule or not use_clr else (8,3))
+                  use_clr=None if use_regular_schedule or not use_clr else (8,3), use_swa=use_swa)
         learn.freeze_to(-2)
         learn.fit(lrs, 1, wds=wd, cycle_len=None if use_regular_schedule else 1,
-                  use_clr=None if use_regular_schedule or not use_clr else (8, 3))
+                  use_clr=None if use_regular_schedule or not use_clr else (8, 3), use_swa=use_swa)
         learn.save(intermediate_clas_file)
-        learn.save_encoder(shared_encoder)
+        learn.save_encoder(out_shared_encoder)
     elif startat==1:
         print("Loading intermediate_Clas_file")
         learn.load(intermediate_clas_file)
@@ -152,11 +155,11 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
         cl = None
     else:
         n_cycles = 1
-    learn.fit(lrs, n_cycles, wds=wd, cycle_len=cl, use_clr=(8,8) if use_clr else None)
+    learn.fit(lrs, n_cycles, wds=wd, cycle_len=cl, use_clr=(8,8) if use_clr else None, use_swa=use_swa)
     print('Plotting lrs...')
     learn.sched.plot_lr()
     learn.save(final_clas_file)
-    learn.save_encoder(shared_encoder)
+    learn.save_encoder(out_shared_encoder)
 
 if __name__ == '__main__': fire.Fire(train_clas)
 
