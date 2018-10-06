@@ -38,7 +38,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     lm_path = dir_path / 'models' / f'{lm_file}.h5'
     assert lm_path.exists(), f'Error: {lm_path} does not exist.'
 
-    bptt,em_sz,nh,nl = 20,400,1150,3
+    bptt,em_sz,nh,nl = 70,400,1150,3
     opt_fn = partial(optim.Adam, betas=(0.8, 0.99))
 
     if backwards:
