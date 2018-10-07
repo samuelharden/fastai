@@ -12,7 +12,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
                lr=0.01, dropmult=1.0, bpe=False, use_clr=True,
                use_regular_schedule=False, use_discriminative=True, last=False, chain_thaw=False,
                from_scratch=False, train_file_id='', shared_encoder='shared_encoder',
-               out_shared_encoder='shared_encoder_updated',load_shared=False, use_swa=False):
+               out_shared_encoder='shared_encoder_updated',load_shared=False, use_swa=False, bptt_i=70):
     print(f'dir_path {dir_path}; cuda_id {cuda_id}; lm_id {lm_id}; clas_id {clas_id}; bs {bs}; cl {cl}; backwards {backwards}; ')
     print(f'dropmult {dropmult} unfreeze {unfreeze} startat {startat}; bpe {bpe}; use_clr {use_clr};')
     print(f'use_regular_schedule {use_regular_schedule}; use_discriminative {use_discriminative}; last {last};')
@@ -38,7 +38,7 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     lm_path = dir_path / 'models' / f'{lm_file}.h5'
     assert lm_path.exists(), f'Error: {lm_path} does not exist.'
 
-    bptt,em_sz,nh,nl = 70,400,1150,3
+    bptt,em_sz,nh,nl = bptt_i,400,1150,3
     opt_fn = partial(optim.Adam, betas=(0.8, 0.99))
 
     if backwards:
