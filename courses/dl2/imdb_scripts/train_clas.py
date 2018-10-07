@@ -84,7 +84,9 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     learn.reg_fn = partial(seq2seq_reg, alpha=2, beta=1)
     learn.clip=25.
     learn.metrics = [accuracy]
-
+    m2 = to_gpu(get_rnn_classifer(bptt, 20*bptt, c, vs, emb_sz=em_sz, n_hid=nh, n_layers=nl, pad_token=1,
+              layers=[em_sz*3, 50, c], drops=[dps[4], 0.1],
+              dropouti=dps[0], wdrop=dps[1], dropoute=dps[2], dropouth=dps[3]))
     lrm = 2.6
     if use_discriminative:
         lrs = np.array([lr/(lrm**4), lr/(lrm**3), lr/(lrm**2), lr/lrm, lr])
@@ -99,13 +101,14 @@ def train_clas(dir_path, cuda_id, lm_id='', clas_id=None, bs=64, cl=1, backwards
     if load_shared:
         print("Loading the shared layer in Encoder")
         learn.load_encoder(shared_encoder)
+        load_model(m2[0], dir_path / 'models' / f'{shared_encoder}.h5')
     else:
         print("Not Loading the shared layer in Encoder")
 
     if (startat<1) and not last and not chain_thaw and not from_scratch:
         learn.freeze_to(-1)
         learn.fit(lrs, 1, wds=wd, cycle_len=None if use_regular_schedule else 1,
-                  use_clr=None if use_regular_schedule or not use_clr else (8,3), use_swa=use_swa)
+                  use_clr=None if use_regular_schedule or not use_clr else (8,3), use_swa=use_swa, swa_model=m2)
         learn.freeze_to(-2)
         learn.fit(lrs, 1, wds=wd, cycle_len=None if use_regular_schedule else 1,
                   use_clr=None if use_regular_schedule or not use_clr else (8, 3), use_swa=use_swa)
