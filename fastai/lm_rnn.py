@@ -134,8 +134,11 @@ class MultiBatchRNN(RNN_Encoder):
 
     def forward(self, input):
         sl,bs = input.size()
-        for l in self.hidden:
-            for h in l: h.data.zero_()
+        if hasattr(self, 'hidden'):
+          for l in self.hidden:
+              for h in l: h.data.zero_()
+        else:
+          self.reset()
         raw_outputs, outputs = [],[]
         for i in range(0, sl, self.bptt):
             r, o = super().forward(input[i: min(i+self.bptt, sl)])
