@@ -370,6 +370,7 @@ class SaveBestModel(LossRecorder):
     
     def save_when_acc(self, metrics):
         loss, acc = metrics[0], metrics[1]
+        print("Loss and accuracy for this epoch is ", loss, acc)
         if self.best_acc == None or acc > self.best_acc:
             self.best_acc = acc
             self.best_loss = loss
